@@ -97,7 +97,6 @@ last_time=0#last time an action was triggered
 throw_t=0#needed for functions which change signal
 zoom_in_con=False#checks if the start of zoom in has been done
 point_con=False
-pointing=False
 
 #instantiantes Hands model
 #Min_detection ->first detection
@@ -173,8 +172,7 @@ with mp_hands.Hands(min_detection_confidence=0.8,min_tracking_confidence=0.5,max
                     ct[4]=0
                 
                 #pointing
-                if((vals[3] and vals[2] and vals[1]) and not(vals[4]) and ((time.time()-last_time)>2)):
-                    pointing = move[0]>0.8 and move[1]>0.8
+                if((vals[3] and vals[2] and vals[1]) and not(vals[4])):
                     ct[5]+=1
                 else:
                     point_con=False
@@ -189,7 +187,7 @@ with mp_hands.Hands(min_detection_confidence=0.8,min_tracking_confidence=0.5,max
                     last_time=time.time()
                     command(1)
                     ct[1]=0
-                elif(ct[2]>=4):
+                elif(ct[2]>=10):
                     last_time=time.time()
                     command(2)
                     ct[2]=0
@@ -201,10 +199,8 @@ with mp_hands.Hands(min_detection_confidence=0.8,min_tracking_confidence=0.5,max
                     last_time=time.time()
                     command(4)
                     ct[4]=0
-                elif(ct[5]>=4 and not(pointing)):
-                    last_time=time.time()
+                elif(ct[5]>=4):
                     point_con=True
-                    ct[5]=0
                     
                 tmp_rec=abs_pos(hand,0)
                     
