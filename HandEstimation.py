@@ -12,7 +12,7 @@ def text(image,txt,pos):#draws text to the screen
     ,(0,0,255),2,cv2.LINE_AA,False)
    
 #sends commands
-def command(val):
+def command(val,point=[]):
     if(val==0):
         print("Throw")
     elif(val==1):
@@ -23,6 +23,8 @@ def command(val):
         print("Snap")
     elif(val==4):
         print("Zoom in")
+    elif(val==5):
+        print("Point",point)
         
 
 #this bit is fiddly, make sure u check diffrent cams and perms
@@ -90,11 +92,12 @@ def closeopen(a):
 
 
 prev = [np.array([0,0,0]),np.array([0,0,0])]#Previous positon (needed for motion calculation)
-ct=[0,0,0,0,0]#counter for the number of times the conditions for each command were met
+ct=[0,0,0,0,0,0]#counter for the number of times the conditions for each command were met
 last_time=0#last time an action was triggered
 throw_t=0#needed for functions which change signal
 zoom_in_con=False#checks if the start of zoom in has been done
-
+point_con=False
+pointing=False
 
 #instantiantes Hands model
 #Min_detection ->first detection
@@ -168,6 +171,14 @@ with mp_hands.Hands(min_detection_confidence=0.8,min_tracking_confidence=0.5,max
                 else:
                     zoom_in_con=False
                     ct[4]=0
+                
+                #pointing
+                if((vals[3] and vals[2] and vals[1]) and not(vals[4]) and ((time.time()-last_time)>2)):
+                    pointing = move[0]>0.8 and move[1]>0.8
+                    ct[5]+=1
+                else:
+                    point_con=False
+                    ct[5]=0
                     
                 #command caller
                 if(ct[0]>=2 and co==0):
@@ -190,13 +201,21 @@ with mp_hands.Hands(min_detection_confidence=0.8,min_tracking_confidence=0.5,max
                     last_time=time.time()
                     command(4)
                     ct[4]=0
+                elif(ct[5]>=4 and not(pointing)):
+                    last_time=time.time()
+                    point_con=True
+                    ct[5]=0
+                    
+                tmp_rec=abs_pos(hand,0)
                     
             for num, hand in enumerate(results.multi_hand_landmarks):#splits into vars
                 #image is the main image aka frame
                 #hand is the landmarks
                 #mp_hands.Hand_CONNECTIONS tells hand connections
+                if(point_con):
+                    command(5,joint_coords(8,hand))
                 mp_drawing.draw_landmarks(image, hand, mp_hands.HAND_CONNECTIONS)#draws landmarks
-                draw_to_hand(image,hand,str(print_vals[num]))#DEBUGGER
+                draw_to_hand(image,hand,str(print_vals[0]))#DEBUGGER
                     
         cv2.imshow('Hand tracking', image)#renders image to the screen
         
